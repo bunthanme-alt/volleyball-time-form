@@ -117,10 +117,12 @@
 
         .error-msg {
             color: #e74c3c;
-            font-size: 13px;
-            text-align: center;
+            font-size: 12px;
+            text-align: left;
             margin-top: 10px;
             min-height: 16px;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -156,8 +158,9 @@
         tg.ready();
 
         // 🌟 URL server (Render) — កន្លែងដែល endpoint /save-time កំពុងដំណើរការ
-        // 👉 ត្រូវប្តូរជា URL Render App ពិតប្រាកដរបស់អ្នក ប្រសិនបើមិនមែនតម្លៃនេះ
-        const SERVER_URL = "https://khvolleyball-telegram-bot.onrender.com/volleyball-time-form";
+        // ⚠️ ត្រូវតែជា /save-time ជាក់លាក់ (Backend Python ត្រួតពិនិត្យ Path នេះដោយផ្ទាល់)
+        // កុំប្តូរជា Mini App Short Name ឬ Path ផ្សេងឡើយ!
+        const SERVER_URL = "https://khvolleyball-telegram-bot.onrender.com/save-time";
 
         // កំណត់ថ្ងៃខែស្វ័យប្រវត្តជាថ្ងៃនេះ
         document.getElementById('matchDate').valueAsDate = new Date();
@@ -192,10 +195,33 @@
             // fetch() ព្រមទាំង initData (សម្រាប់ server ផ្ទៀងផ្ទាត់សុវត្ថិភាព) និង start_param
             // (ដែល encode ថា Group/Chat មួយណាដែលត្រូវ update ត្រឡប់)
             const initData = tg.initData || "";
-            const ref = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) ? tg.initDataUnsafe.start_param : "";
+            let ref = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) ? tg.initDataUnsafe.start_param : "";
+
+            // 🌟 Fallback: some Telegram clients don't reliably populate
+            // initDataUnsafe.start_param even though the value IS present in
+            // the raw initData query string. Parse it directly as a backup.
+            if (!ref && initData) {
+                try {
+                    const parsedParams = new URLSearchParams(initData);
+                    ref = parsedParams.get("start_param") || "";
+                } catch (e) {
+                    console.warn("Failed to parse initData fallback:", e);
+                }
+            }
 
             if (!ref) {
-                showError("⚠️ មិនអាចរកឃើញ Group/Chat ដើមទេ សូមចុចប៊ូតុងម្ដងទៀតពី Group/Chat។");
+                console.warn("start_param missing. initDataUnsafe:", tg.initDataUnsafe, "initData:", initData);
+                const debugInfo =
+                    "🔍 Debug Info:\n" +
+                    "• start_param present in initDataUnsafe: " + (tg.initDataUnsafe && ("start_param" in tg.initDataUnsafe)) + "\n" +
+                    "• Raw initData length: " + initData.length + "\n" +
+                    "• Raw initData (first 300 chars): " + initData.substring(0, 300) + "\n" +
+                    "• Platform: " + (tg.platform || "unknown") + " | Version: " + (tg.version || "unknown");
+                showError(
+                    "⚠️ មិនអាចរកឃើញ Group/Chat ដើមទេ។ សូមបិទ Mini App នេះទាំងស្រុង " +
+                    "(មិនមែនត្រឹមតែថយក្រោយ) រួចចុចប៊ូតុង ⏰ ម្ដងទៀតពី Group ដើម។\n\n" +
+                    debugInfo
+                );
                 return;
             }
 
