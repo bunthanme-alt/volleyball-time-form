@@ -157,7 +157,8 @@
         tg.expand();
         tg.ready();
 
-        const SERVER_URL = "https://khvolleyball-test.onrender.com";
+        // 🌟 URL ត្រឹមត្រូវទៅកាន់ Python Server លើ Render
+        const SERVER_URL = "https://khvolleyball-test.onrender.com/save-time";
 
         document.getElementById('matchDate').valueAsDate = new Date();
 
@@ -197,30 +198,10 @@
                 }
             }
 
-            // 🌟 Fallback ឆ្លាតវៃ៖ ប្រសិនបើរកមិនឃើញ start_param ទេ គឺទាញយក chat_id ចុងក្រោយពី server ដោយស្វ័យប្រវត្តិ
+            // 🌟 Fallback ឆ្លាតវៃ៖ បើគ្មាន start_param (ពេលតេស្តផ្ទាល់ខ្លួន) យក User ID មកប្រើដើម្បីកុំឱ្យ Error
             if (!ref) {
-                try {
-                    const res = await fetch("https://khvolleyball-test.onrender.com/get-latest-chat-id", { method: "GET" });
-                    const data = await res.json();
-                    if (data && data.ref) {
-                        ref = data.ref;
-                    }
-                } catch (err) {
-                    console.warn("Failed to fetch latest chat_id fallback:", err);
-                }
-            }
-
-            if (!ref) {
-                const debugInfo =
-                    "🔍 Debug Info:\n" +
-                    "• start_param present in initDataUnsafe: " + (tg.initDataUnsafe && ("start_param" in tg.initDataUnsafe)) + "\n" +
-                    "• Raw initData length: " + initData.length + "\n" +
-                    "• Platform: " + (tg.platform || "unknown") + " | Version: " + (tg.version || "unknown");
-                showError(
-                    "⚠️ មិនអាចរកឃើញ Group/Chat ដើមទេ។ សូមព្យាយាមបើកសារថ្មីពី Group ដើម។\n\n" +
-                    debugInfo
-                );
-                return;
+                let userId = (tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : "12345";
+                ref = "p" + userId;
             }
 
             saveBtn.disabled = true;
@@ -245,12 +226,12 @@
                 } else {
                     saveBtn.disabled = false;
                     saveBtn.textContent = "បញ្ជាក់ការកំណត់ (Save)";
-                    showError("⚠️ មិនអាចរក្សាទុកបានទេ សូមព្យាយាមម្ដងទៀត។ (" + (result.error || response.status) + ")");
+                    showError("⚠️ មិនអាចរក្សាទុកបានទេ៖ " + (result.error || response.status));
                 }
             } catch (err) {
                 saveBtn.disabled = false;
                 saveBtn.textContent = "បញ្ជាក់ការកំណត់ (Save)";
-                showError("⚠️ មានបញ្ហាភ្ជាប់បណ្ដាញ សូមព្យាយាមម្ដងទៀត។");
+                showError("⚠️ មានបញ្ហាភ្ជាប់បណ្ដាញ (Network Error)");
             }
         }
 
