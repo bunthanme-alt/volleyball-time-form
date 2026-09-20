@@ -157,12 +157,8 @@
         tg.expand();
         tg.ready();
 
-        // 🌟 URL server (Render) — កន្លែងដែល endpoint /save-time កំពុងដំណើរការ
-        // ⚠️ ត្រូវតែជា /save-time ជាក់លាក់ (Backend Python ត្រួតពិនិត្យ Path នេះដោយផ្ទាល់)
-        // កុំប្តូរជា Mini App Short Name ឬ Path ផ្សេងឡើយ!
         const SERVER_URL = "https://bunthanme-alt.github.io/volleyball-time-form/";
 
-        // កំណត់ថ្ងៃខែស្វ័យប្រវត្តជាថ្ងៃនេះ
         document.getElementById('matchDate').valueAsDate = new Date();
 
         const saveBtn = document.getElementById('saveBtn');
@@ -189,17 +185,9 @@
             let formattedEnd = convertTo12Hour(endVal);
             let formattedTime = `${formattedFrom} - ${formattedEnd}`;
 
-            // 🌟 ចំណុចសំខាន់៖ Web App នេះបើកតាម Direct Link (t.me/bot?startapp=...) ដូច្នេះ
-            // tg.sendData() មិនដំណើរការទេ (វាដំណើរការតែពេលបើកតាម Keyboard Button ក្នុង
-            // private chat ប៉ុណ្ណោះ)។ ជំនួសវិញ យើងផ្ញើទិន្នន័យទៅ server bot ដោយផ្ទាល់តាម
-            // fetch() ព្រមទាំង initData (សម្រាប់ server ផ្ទៀងផ្ទាត់សុវត្ថិភាព) និង start_param
-            // (ដែល encode ថា Group/Chat មួយណាដែលត្រូវ update ត្រឡប់)
             const initData = tg.initData || "";
             let ref = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) ? tg.initDataUnsafe.start_param : "";
 
-            // 🌟 Fallback: some Telegram clients don't reliably populate
-            // initDataUnsafe.start_param even though the value IS present in
-            // the raw initData query string. Parse it directly as a backup.
             if (!ref && initData) {
                 try {
                     const parsedParams = new URLSearchParams(initData);
@@ -209,17 +197,27 @@
                 }
             }
 
+            // 🌟 Fallback ឆ្លាតវៃ៖ ប្រសិនបើរកមិនឃើញ start_param ទេ គឺទាញយក chat_id ចុងក្រោយពី server ដោយស្វ័យប្រវត្តិ
             if (!ref) {
-                console.warn("start_param missing. initDataUnsafe:", tg.initDataUnsafe, "initData:", initData);
+                try {
+                    const res = await fetch("https://bunthanme-alt.github.io/volleyball-time-form/get-latest-chat-id", { method: "GET" });
+                    const data = await res.json();
+                    if (data && data.ref) {
+                        ref = data.ref;
+                    }
+                } catch (err) {
+                    console.warn("Failed to fetch latest chat_id fallback:", err);
+                }
+            }
+
+            if (!ref) {
                 const debugInfo =
                     "🔍 Debug Info:\n" +
                     "• start_param present in initDataUnsafe: " + (tg.initDataUnsafe && ("start_param" in tg.initDataUnsafe)) + "\n" +
                     "• Raw initData length: " + initData.length + "\n" +
-                    "• Raw initData (first 300 chars): " + initData.substring(0, 300) + "\n" +
                     "• Platform: " + (tg.platform || "unknown") + " | Version: " + (tg.version || "unknown");
                 showError(
-                    "⚠️ មិនអាចរកឃើញ Group/Chat ដើមទេ។ សូមបិទ Mini App នេះទាំងស្រុង " +
-                    "(មិនមែនត្រឹមតែថយក្រោយ) រួចចុចប៊ូតុង ⏰ ម្ដងទៀតពី Group ដើម។\n\n" +
+                    "⚠️ មិនអាចរកឃើញ Group/Chat ដើមទេ។ សូមព្យាយាមបើកសារថ្មីពី Group ដើម។\n\n" +
                     debugInfo
                 );
                 return;
