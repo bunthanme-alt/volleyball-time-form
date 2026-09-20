@@ -200,7 +200,7 @@
             // 🌟 Fallback ឆ្លាតវៃ៖ ប្រសិនបើរកមិនឃើញ start_param ទេ គឺទាញយក chat_id ចុងក្រោយពី server ដោយស្វ័យប្រវត្តិ
             if (!ref) {
                 try {
-                    const res = await fetch("https://bunthanme-alt.github.io/volleyball-time-form/get-latest-chat-id", { method: "GET" });
+                    const res = await fetch("https://khvolleyball-test.onrender.com/get-latest-chat-id", { method: "GET" });
                     const data = await res.json();
                     if (data && data.ref) {
                         ref = data.ref;
